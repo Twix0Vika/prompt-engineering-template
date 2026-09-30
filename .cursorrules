@@ -1,0 +1,64 @@
+# TimeCapsule Project Rules
+
+## 1. Project Overview & Tech Stack
+- **Project**: TimeCapsule (Interactive time capsules and anniversaries service).
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, Redux Toolkit (RTK Query).
+- **Backend**: Python, FastAPI, Pydantic (v2), uv, Background Scheduler (Cron/APScheduler).
+- **Storage**: JSON files (per entity storage) and Cloud Storage (Cloudinary/AWS S3/Firebase) for media.
+
+## 2. Architectural Approach
+- **Feature-First Structure**: The project follows a strict feature-driven architecture. The frontend and backend code for a specific feature must be co-located within a single feature folder (e.g., `features/capsules/`).
+- **Documentation**: Feature documentation (BRD, architecture, test cases) should be consolidated in a single `docs/<feature>/` folder.
+
+## 3. Naming Conventions
+- **Folders & Files**: Use `kebab-case` (e.g., `capsule-service.ts`, `capsule-router.py`).
+- **React Components**: Use `PascalCase` for files and component names (e.g., `CapsuleForm.tsx`).
+- **Backend (Python)**: Use `snake_case` for variables, functions, and file names. Use `PascalCase` for Classes and Pydantic Models.
+- **Frontend (TypeScript)**: Use `camelCase` for variables and functions. Use `PascalCase` for Types, Interfaces, and Classes.
+- **Constants**: Use `UPPER_SNAKE_CASE` in both environments.
+
+## 4. Code Style & Best Practices
+- **Frontend**:
+  - Prefer functional components and React hooks.
+  - Enforce strict TypeScript typing; avoid `any`.
+  - Use RTK Query for server state management and mutations.
+- **Backend**:
+  - Use FastAPI Dependency Injection (routers depend on services, services depend on repositories).
+  - Use Pydantic models for request/response validation and database schemas.
+  - Keep routers minimal; place business logic in services.
+
+## 5. Security Requirements (NFR-1)
+- **Time-Lock Data Protection (Critical)**: The backend API MUST NOT include the `content` and `media` (or their URLs) of a capsule in the response if `Current_Time < Target_DateTime`. The data must remain completely sealed at the server level until the unlock date.
+- **Data Transmission**: All data transmissions must happen exclusively over HTTPS.
+- **Authorization (FR-1.2)**: Ensure private access. Only the authorized owner of a capsule can view, edit, or delete it.
+
+## 6. Error Handling
+- **Backend**:
+  - Use appropriate HTTP status codes: `201` (Created), `400` (Bad Request / Validation Error), `403` (Forbidden / editing unlocked capsule), `404` (Not Found).
+  - Return standardized error JSON formats for the frontend to consume.
+- **Frontend**:
+  - Gracefully catch API errors via RTK Query hooks.
+  - Display user-friendly toast notifications or inline error messages (e.g., form validation errors, unauthorized access).
+  - Provide fallback states (empty state, error boundary) for failed requests.
+
+## 7. Editorial Design Language
+- Use a cohesive editorial visual system across the TimeCapsule frontend:
+  - Headings use high-contrast `Playfair Display`; body and compact UI metadata use a readable sans-serif such as `Plus Jakarta Sans`.
+  - Use the warm rose-gold / nude-sand palette: `#FAF0EB` (background), `#FFFDF9` (surface), and `#E8D5CE` (border), with cocoa text and restrained coral accents.
+  - Prefer `rounded-3xl` cards, subtle borders/shadows, and restrained glassmorphism for navigation and overlays.
+- Keep visual hierarchy deliberate: serif display titles, sans-serif dates/system labels, and limited script accents for decorative copy only.
+- Do not introduce unrelated color systems or harsh black/white surfaces into the capsule dashboard without an explicit design requirement.
+
+## 8. Dense Bento Layout & Image Constraints
+- Dashboards, capsule collections, and image galleries MUST use full-width responsive multi-column grids, a compact horizontal scroller, or another explicitly horizontal arrangement. Never stack image previews as a single-column vertical list on desktop.
+- Prefer responsive bento grids with varied spans (`col-span`, `row-span`) to use available space without forcing fixed card heights that clip content.
+- Keep all capsule previews and gallery thumbnails compact (normally `max-h-40 max-w-40` or smaller), with `object-cover`, deliberate crops, rounded inner frames, and subtle borders.
+- Never let a thumbnail or capsule image expand into a full-width banner by default. Large imagery is reserved for intentional user-opened viewers, and must still fit responsively.
+- Ensure grid items can shrink (`min-w-0`) and use responsive breakpoints so galleries remain usable on narrow screens.
+
+## 9. Frontend Quality Standards
+- Keep TypeScript strict and model API/UI data with explicit types; do not add `any` to bypass type errors.
+- Remove unused imports, variables, and props before completing a change.
+- Keep JSX readable and structurally balanced. Match every opening tag with the correct closing tag; prefer multiline JSX for nested cards and mapped elements.
+- Use semantic elements, accessible button labels, visible keyboard focus, and meaningful image alt text where the image conveys information.
+- Run the relevant frontend lint and TypeScript checks after UI changes.

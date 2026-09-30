@@ -1,184 +1,433 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+:root {
+  --espresso: #3d2c29;
+  --espresso-muted: #7c6863;
+  --espresso-light: #9e8983;
+  --sand: #faf0eb;
+  --sand-subtle: #f5ebe6;
+  --cream: #fffdf9;
+  --cream-pure: #ffffff;
+  --rose-border: #e8d5ce;
+  --rose-subtle: #f2e2dc;
+  --coral-accent: #e87a5d;
+  --coral-hover: #d96d51;
+  --coral-soft: #fbeee9;
+  --gold-accent: #d4a373;
 }
 
-.hero {
+body {
+  background: var(--sand);
+  color: var(--espresso);
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Ambient Shell & Backdrop
+───────────────────────────────────────────────────────────── */
+.timecapsule-shell {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(240, 192, 196, 0.35) 0%, transparent 40rem),
+    radial-gradient(circle at 88% 18%, rgba(245, 219, 210, 0.45) 0%, transparent 42rem),
+    radial-gradient(circle at 50% 85%, rgba(239, 226, 218, 0.5) 0%, transparent 45rem),
+    linear-gradient(145deg, #faf0eb 0%, #f6ece7 45%, #f0e3db 100%);
+  color: var(--espresso);
+  min-height: 100vh;
   position: relative;
+  isolation: isolate;
+}
 
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
+/* Floating Ambient Orbs */
+.timecapsule-shell::before {
+  content: '';
+  position: absolute;
+  top: 15rem;
+  right: -6rem;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(255, 240, 235, 0) 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: -1;
+}
 
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
+.timecapsule-shell::after {
+  content: '';
+  position: absolute;
+  bottom: 8rem;
+  left: -8rem;
+  width: 32rem;
+  height: 32rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(235, 195, 198, 0.28) 0%, rgba(245, 226, 218, 0) 70%);
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: -1;
+}
 
-  .framework,
-  .vite {
-    position: absolute;
-  }
+/* ─────────────────────────────────────────────────────────────
+   Modern Floating Header
+───────────────────────────────────────────────────────────── */
+.timecapsule-header {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 2.5rem), 78rem);
+  background: rgba(255, 253, 249, 0.8) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(232, 213, 206, 0.7) !important;
+  border-radius: 9999px;
+  box-shadow:
+    0 10px 30px -5px rgba(61, 44, 41, 0.05),
+    0 20px 40px -15px rgba(61, 44, 41, 0.04);
+  z-index: 50;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
+.timecapsule-logo {
+  background: linear-gradient(135deg, #e87a5d 0%, #ea907a 100%) !important;
+  color: #ffffff;
+  box-shadow:
+    0 4px 14px rgba(232, 122, 93, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  transition: transform 0.25s ease;
+}
 
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
+.timecapsule-logo:hover {
+  transform: scale(1.05) rotate(3deg);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Premium Buttons & Pills
+───────────────────────────────────────────────────────────── */
+.timecapsule-primary {
+  background: linear-gradient(135deg, #e87a5d 0%, #eb8a71 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 6px 20px rgba(232, 122, 93, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timecapsule-primary:hover {
+  background: linear-gradient(135deg, #df7053 0%, #e87a5d 100%) !important;
+  box-shadow:
+    0 8px 24px rgba(232, 122, 93, 0.38),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.timecapsule-primary:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.timecapsule-secondary {
+  background: rgba(255, 253, 249, 0.85);
+  border: 1px solid var(--rose-border);
+  color: var(--espresso);
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.timecapsule-secondary:hover {
+  background: #ffffff;
+  border-color: #d8c2ba;
+  box-shadow: 0 4px 12px rgba(61, 44, 41, 0.05);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Bento Grid Layout
+───────────────────────────────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-auto-rows: minmax(180px, auto);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-#center {
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.bento-card {
+  position: relative;
+  border-radius: 1.5rem;
+  border: 1px solid var(--rose-border);
+  background: rgba(255, 253, 249, 0.82);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 10px 25px -5px rgba(61, 44, 41, 0.04),
+    0 20px 30px -15px rgba(61, 44, 41, 0.03);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  transform: translateY(-3px);
+  border-color: #dbc3bb;
+  box-shadow:
+    0 16px 36px -8px rgba(61, 44, 41, 0.08),
+    0 24px 44px -16px rgba(61, 44, 41, 0.05);
+}
+
+@media (min-width: 1024px) {
+  .bento-span-2 {
+    grid-column: span 2;
+  }
+  .bento-span-3 {
+    grid-column: span 3;
+  }
+  .bento-row-2 {
+    grid-row: span 2;
+  }
+}
+
+/* Bento Stat Cards */
+.bento-stat {
+  background: linear-gradient(145deg, rgba(255, 253, 249, 0.95), rgba(253, 245, 240, 0.85)) !important;
+  border: 1px solid rgba(232, 213, 206, 0.65) !important;
+}
+
+.bento-stat-highlight {
+  background: linear-gradient(140deg, #fdf4f0 0%, #fae8e1 100%) !important;
+  border: 1px solid rgba(232, 122, 93, 0.22) !important;
+}
+
+/* Bento Hero CTA */
+.bento-cta {
+  background: linear-gradient(135deg, #e87a5d 0%, #ea8a72 50%, #f0a390 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow:
+    0 12px 32px rgba(232, 122, 93, 0.28),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.bento-cta:hover {
+  box-shadow:
+    0 18px 40px rgba(232, 122, 93, 0.38),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Capsule Cards in Bento Grid
+───────────────────────────────────────────────────────────── */
+.timecapsule-card {
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  overflow: hidden;
+  border-radius: 1.5rem;
 }
 
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
+.capsule-card-media-wrapper {
   position: relative;
+  overflow: hidden;
+  border-radius: 1.125rem;
+  background: linear-gradient(135deg, #f4dfdb 0%, #ece0db 100%);
+}
+
+.capsule-card-media-wrapper img {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+.timecapsule-card:hover .capsule-card-media-wrapper img {
+  transform: scale(1.05);
+}
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
+/* ─────────────────────────────────────────────────────────────
+   Status Badges & Pill Tags
+───────────────────────────────────────────────────────────── */
+.timecapsule-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px);
+}
+
+.badge-locked {
+  background: rgba(255, 245, 242, 0.88);
+  border: 1px solid rgba(232, 122, 93, 0.28);
+  color: #ad5c48;
+}
+
+.badge-ready {
+  background: rgba(240, 253, 244, 0.9);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #1f7a37;
+}
+
+.badge-opened {
+  background: rgba(248, 247, 245, 0.9);
+  border: 1px solid rgba(160, 140, 135, 0.25);
+  color: #6d5b57;
+}
+
+.timecapsule-countdown {
+  background: rgba(250, 237, 232, 0.8);
+  border: 1px solid rgba(232, 213, 206, 0.7);
+  color: #8c5346;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Typography & Accents
+───────────────────────────────────────────────────────────── */
+.editorial-heading {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--espresso);
+}
+
+.editorial-kicker {
+  font-family: 'Caveat', cursive;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--coral-accent);
+}
+
+.script-accent {
+  font-family: 'Caveat', cursive;
+  font-weight: 700;
+}
+
+.bento-sticker {
+  font-family: 'Caveat', cursive;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--coral-accent);
+  transform: rotate(-6deg);
+  display: inline-block;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Memory Gallery (Horizontal Stream)
+───────────────────────────────────────────────────────────── */
+.memory-gallery-row {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232, 122, 93, 0.25) transparent;
+}
+
+.memory-gallery-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.memory-gallery-row::-webkit-scrollbar-thumb {
+  background: rgba(232, 122, 93, 0.25);
+  border-radius: 9999px;
+}
+
+.memory-gallery-thumbnail {
+  flex-shrink: 0;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(232, 213, 206, 0.65);
+  background: #fdf5f0;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.memory-gallery-thumbnail:hover {
+  transform: scale(1.05) translateY(-2px);
+  border-color: var(--coral-accent);
+  box-shadow: 0 10px 24px -4px rgba(232, 122, 93, 0.22);
+}
+
+.memory-gallery-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Modals & Lightboxes
+───────────────────────────────────────────────────────────── */
+.timecapsule-modal-backdrop {
+  background: rgba(61, 44, 41, 0.4);
+  backdrop-filter: blur(14px);
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timecapsule-modal {
+  background: rgba(255, 253, 249, 0.96) !important;
+  border: 1px solid rgba(232, 213, 206, 0.85);
+  box-shadow:
+    0 25px 60px -15px rgba(61, 44, 41, 0.22),
+    0 0 1px 1px rgba(255, 255, 255, 0.8) inset;
+  backdrop-filter: blur(24px);
+  animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timecapsule-field {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid var(--rose-border) !important;
+  color: var(--espresso) !important;
+  transition: all 0.2s ease;
+}
+
+.timecapsule-field:focus {
+  background: #ffffff !important;
+  border-color: var(--coral-accent) !important;
+  box-shadow: 0 0 0 3px rgba(232, 122, 93, 0.16) !important;
+}
+
+.timecapsule-dropzone {
+  background: rgba(250, 244, 240, 0.65) !important;
+  border: 1.5px dashed #dbc2ba !important;
+  transition: all 0.2s ease;
+}
+
+.timecapsule-dropzone:hover {
+  background: #fdf5f0 !important;
+  border-color: var(--coral-accent) !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }

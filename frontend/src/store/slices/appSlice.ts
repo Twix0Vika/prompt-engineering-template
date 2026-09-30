@@ -1,37 +1,18 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-
-export type ItemDialogMode = 'create' | 'edit' | null
+import { createSlice } from '@reduxjs/toolkit'
 
 interface AppState {
-  itemDialogMode: ItemDialogMode
-  editingItemId: string | null
+  ready: boolean
 }
 
 const initialState: AppState = {
-  itemDialogMode: null,
-  editingItemId: null,
+  ready: true,
 }
 
 const appSlice = createSlice({
   name: 'app',
   initialState,
   reducers: {
-    openCreateItemDialog(state) {
-      state.itemDialogMode = 'create'
-      state.editingItemId = null
-    },
-    openEditItemDialog(state, action: PayloadAction<string>) {
-      state.itemDialogMode = 'edit'
-      state.editingItemId = action.payload
-    },
-    closeItemDialog(state) {
-      state.itemDialogMode = null
-      state.editingItemId = null
-    },
   },
 })
-
-export const { openCreateItemDialog, openEditItemDialog, closeItemDialog } =
-  appSlice.actions
 
 export default appSlice.reducer

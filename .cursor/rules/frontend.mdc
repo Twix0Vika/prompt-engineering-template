@@ -1,0 +1,54 @@
+---
+description: Frontend development rules for React 19, TypeScript, Vite, Tailwind CSS, Redux Toolkit, and UI standards
+globs: frontend/**,features/*/frontend/**
+---
+
+# Frontend Development Standards — TimeCapsule
+
+## 1. Technology Stack
+- **Framework & Runtime**: React 19 (Functional components and modern hooks), Vite 8.
+- **Language**: TypeScript with strict mode enabled.
+- **Styling**: Tailwind CSS v4, shadcn/ui primitives (`@radix-ui/react-*`), Lucide icons.
+- **State Management**: Redux Toolkit (RTK Query for server state, slices for local/auth state).
+- **Routing**: `react-router-dom` with `ProtectedRoute` guards.
+
+## 2. Directory Layout & Imports
+- **Feature Code**: Located under `features/<feature_name>/frontend/`:
+  - `api/`: RTK Query slices, TypeScript payload/response contracts.
+  - `components/`: UI components specific to the feature.
+  - `pages/`: Route-level entry components.
+  - `hooks/`: Reusable custom hooks (e.g., `useCountdown`).
+- **Core App Code**: Located in `frontend/src/`:
+  - `frontend/src/store/`: Central Redux store aggregating feature APIs and slices.
+  - `frontend/src/components/ui/`: Shared atomic shadcn/ui components.
+  - `frontend/src/lib/`: Shared utilities (`utils.ts`, `config.ts`).
+- **Path Aliases**:
+  - `@/*` points to `frontend/src/*`.
+  - `@features/*` points to root `features/*`.
+
+## 3. Redux Toolkit & RTK Query
+- Use `createApi` and `fetchBaseQuery` with tag-based caching (`tagTypes: ['Capsule']`).
+- Attach authorization headers automatically via `prepareHeaders` from `state.auth.token` or `localStorage`.
+- Invalidate specific IDs and `LIST` tags upon mutations (`createCapsule`, `updateCapsule`, `deleteCapsule`, `openCapsule`).
+- Keep RTK Query hooks close to consumers and avoid redundant manual useEffect state synchronization.
+
+## 4. UI & Layout Guidelines
+- **Bento & Gallery Rules**:
+  - Capsule collections and image galleries must render as responsive multi-column grids or horizontal flows.
+  - Use deliberate thumbnail frames (`rounded-xl`, `aspect-square`, `object-cover`, max dimension constraints) rather than expansive vertical blocks.
+  - Provide interactive modal/lightbox viewers for inspecting images at full scale.
+- **Timer & Status Transitions**:
+  - Locked capsules display real-time live countdowns (`useCountdown`).
+  - When the countdown finishes, trigger re-fetch and transition UI from locked countdown to openable state.
+
+## 5. Error Handling & Quality Standards
+- **Form Validation**:
+  - Validate required fields (`title`, `target_datetime`, `notify_email`) before submission.
+  - Enforce max upload limit of 15 MB across attached files.
+- **Error Feedback**:
+  - Catch API rejections cleanly and present inline or toast notifications; do not allow uncaught promise rejections.
+  - Provide accessible empty states and error boundaries.
+- **Strict Typing**:
+  - No `any` types; define explicit interfaces for API payloads and component props.
+  - Keep JSX clean, accessible, and balanced. Remove unused imports and variables before finalizing tasks.
+

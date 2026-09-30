@@ -1,0 +1,57 @@
+---
+description: Backend development rules for FastAPI, Pydantic, dependency injection, services/repositories pattern, and API error codes
+globs: backend/**,features/*/backend/**
+---
+
+# Backend Development Standards — TimeCapsule
+
+## 1. Technology Stack
+- **Framework**: FastAPI with Python 3.11+.
+- **Packaging & Script Execution**: `uv` package manager.
+- **Data Validation & Serialisation**: Pydantic v2.
+- **Security & Authentication**: Passlib (Bcrypt), PyJWT, OAuth2 password bearer.
+- **Storage**: JSON-file repositories (`app/utils/json_store.py`) and local/cloud media filesystem storage.
+- **Scheduling**: Asyncio background task lifecycle (`features/capsules/backend/tasks/scheduler.py`).
+
+## 2. Layered Architecture & Responsibilities
+Backend code follows a strict layered separation of concerns:
+- **Routers** (`features/<feature>/backend/routers.py`):
+  - Handle HTTP parameter binding, Form/Multipart ingestion, and status codes.
+  - Rely exclusively on dependency injection (`Depends`) to access services and authenticated user models.
+  - No direct file storage or domain business logic in routers.
+- **Services** (`features/<feature>/backend/services.py`):
+  - Contain all business validation rules, time calculations, status determination, and NFR-1 data sealing.
+  - Mediate between repository storage and API response DTOs.
+- **Repositories** (`features/<feature>/backend/repository.py`):
+  - Pure persistence layer. Read and write domain entities using thread-safe / atomic JSON file helpers.
+- **Models** (`features/<feature>/backend/models.py`):
+  - Pydantic models for request contracts (`CapsuleCreate`, `CapsuleUpdate`), database schemas (`CapsuleInDb`), and outgoing responses (`CapsuleResponse`).
+- **Dependencies** (`features/<feature>/backend/dependencies.py`):
+  - Cached factory providers (`@lru_cache`) for repositories, services, and `get_current_user` resolution.
+
+## 3. Security, Password Handling & NFR-1
+- **Password Length Limit**:
+  - Bcrypt truncates or rejects passwords exceeding 72 bytes.
+  - All password hashing and verification in `features/auth/backend/security.py` must truncate inputs to 72 bytes (`password.encode('utf-8')[:72]`).
+- **NFR-1 Data Sealing**:
+  - The `CapsuleService` must enforce `_apply_sealing()`.
+  - When `datetime.now(timezone.utc) < target_datetime`, `text` must be returned as `None` and `media_files` must be returned as `[]`.
+- **Ownership Verification**:
+  - Any retrieval, modification, or deletion of a capsule must verify that `capsule.owner_id == current_user.id`. Return `404 Not Found` if not owned.
+- **Edit Lockdown**:
+  - Once `Current_Time >= Target_DateTime`, modifications to a capsule are strictly prohibited. Return `403 Forbidden`.
+
+## 4. Error Handling & HTTP Status Codes
+Use explicit and semantic HTTP status codes:
+- `201 Created`: Successful creation of users or capsules.
+- `204 No Content`: Successful deletion.
+- `400 Bad Request`: Validation failure, past `target_datetime`, or malformed input.
+- `401 Unauthorized`: Missing or invalid Bearer JWT token.
+- `403 Forbidden`: Attempting to edit an unlocked/past capsule.
+- `404 Not Found`: Entity does not exist or belongs to another user.
+- `413 Request Entity Too Large`: File upload exceeding 15 MB threshold.
+
+## 5. Background Task Scheduler
+- The scheduler runs as an asyncio loop hooked into the FastAPI `lifespan` context.
+- Periodically checks for due capsules (`target_datetime <= now` and `email_sent == False`), triggers email notifications, and updates the database record.
+

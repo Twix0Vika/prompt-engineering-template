@@ -1,0 +1,64 @@
+---
+description: Global architectural rules, security (NFR-1), naming conventions, and design standards for TimeCapsule
+globs: *
+---
+
+# Shared Rules & Architecture — TimeCapsule
+
+## 1. Project Overview & Architecture
+- **Project**: TimeCapsule (Interactive service for scheduled memories, time capsules, and anniversaries).
+- **Feature-First Architecture**:
+  - All domain features live in modular directories: `features/<feature_name>/` (e.g., `features/capsules/`, `features/auth/`).
+  - Frontend and backend for each feature are co-located in `features/<feature>/frontend/` and `features/<feature>/backend/`.
+  - Feature-specific documentation is maintained under `docs/<feature>/`.
+- **Environment & Auth Bypass**:
+  - Development authentication bypass can be controlled via `VITE_DEV_AUTH_BYPASS` in the frontend environment.
+  - When enabled in development, mock credentials (`dev-only-mock-token`, user `dev-user`) allow testing the dashboard and capsules directly.
+
+## 2. Naming Conventions
+- **Files & Folders**: Use `kebab-case` for general files, utility scripts, and folders (e.g., `use-countdown.ts`, `capsule-sealing/`).
+- **React Components**: Use `PascalCase` for component files and symbols (e.g., `CapsuleCard.tsx`, `DashboardPage.tsx`).
+- **Backend (Python)**:
+  - Modules & packages: `snake_case` (e.g., `services.py`, `repository.py`).
+  - Functions & variables: `snake_case`.
+  - Classes & Pydantic models: `PascalCase` (e.g., `CapsuleResponse`, `UserRepository`).
+- **Frontend (TypeScript)**:
+  - Variables & functions: `camelCase`.
+  - Types, interfaces & enums: `PascalCase` (e.g., `CapsuleStatus`, `CreateCapsulePayload`).
+- **Constants**: `UPPER_SNAKE_CASE` across both stacks.
+
+## 3. Critical Security Requirements (NFR-1)
+- **Time-Lock Sealing (Server-Side Enforcement)**:
+  - If `Current_Time < Target_DateTime`, the backend API MUST NOT transmit capsule `text` or `media_files` (or URLs).
+  - The service layer must strip or nullify these fields so that no sealed data reaches the client network payload before the target unlock timestamp.
+- **Data Transmission**:
+  - All external API communication must use HTTPS in production.
+- **Private Access (FR-1.2)**:
+  - Users can only read, edit, or delete their own capsules (`owner_id` verification).
+
+## 4. Editorial Design Language
+- **Color Palette**:
+  - Background: Warm rose-gold / nude-sand `#FAF0EB`.
+  - Surface: Warm off-white `#FFFDF9`.
+  - Border: Soft sand `#E8D5CE`.
+  - Text & Accents: Warm cocoa text, restrained coral accents, muted slate/amber/green status indicators.
+- **Typography**:
+  - Headings & display titles: High-contrast `Playfair Display`.
+  - Body, metadata & controls: Clean, highly readable sans-serif (`Plus Jakarta Sans` or system sans).
+  - Restrict cursive/script fonts to deliberate decorative accents only.
+- **Surfaces & Elevation**:
+  - Generous border radiuses (`rounded-2xl` to `rounded-3xl`).
+  - Subtle borders and soft shadows instead of heavy saturated containers.
+  - Avoid stark high-contrast black/white layouts unless specifically required.
+
+## 5. Responsive Bento Grid & Imagery Standards
+- **Layout Flow**:
+  - Dashboards and capsule lists must use responsive multi-column grids or horizontal scrolling containers.
+  - Avoid stacking media cards into a single tall vertical column on desktop.
+- **Image Constraints**:
+  - Capsule previews and thumbnails must remain compact (`max-h-40 max-w-40` or appropriate aspect-ratio containers) with `object-cover`.
+  - Never display unconstrained full-width banners in preview mode.
+  - Full-resolution imagery is reserved for dedicated lightbox or full-screen view modes.
+- **Overflow & Responsiveness**:
+  - Grid elements must be shrinkable (`min-w-0`) to prevent flex/grid blowout on small viewports.
+

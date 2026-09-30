@@ -10,7 +10,8 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@features/*": ["../features/*"]
     },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

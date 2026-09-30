@@ -1,0 +1,12 @@
+{
+  "nfr1-capsule-sealing-check": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./.agents/scripts/hook-nfr1-check.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}
+
