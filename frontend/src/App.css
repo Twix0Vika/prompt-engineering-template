@@ -1,17 +1,19 @@
 :root {
   --espresso: #3d2c29;
-  --espresso-muted: #7c6863;
-  --espresso-light: #9e8983;
-  --sand: #faf0eb;
-  --sand-subtle: #f5ebe6;
+  --espresso-muted: #7e6a65;
+  --espresso-light: #a4918c;
+  --sand: #f7f4ef;
+  --sand-alt: #faf7f2;
+  --sand-subtle: #f2eee8;
   --cream: #fffdf9;
   --cream-pure: #ffffff;
-  --rose-border: #e8d5ce;
-  --rose-subtle: #f2e2dc;
-  --coral-accent: #e87a5d;
-  --coral-hover: #d96d51;
-  --coral-soft: #fbeee9;
-  --gold-accent: #d4a373;
+  --blush-accent: #fbe8e6;
+  --blush-soft: #fcf1ef;
+  --blush-hover: #fae1de;
+  --rose-button: #e8a49c;
+  --rose-button-hover: #df958c;
+  --rose-border: #EADFD8;
+  --rose-border-subtle: #f0e4d9;
 }
 
 body {
@@ -34,14 +36,14 @@ button {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Ambient Shell & Backdrop
+   Ambient Shell & Backdrop (Creamy Beige & Soft Blush)
 ───────────────────────────────────────────────────────────── */
 .timecapsule-shell {
   background:
-    radial-gradient(circle at 12% 10%, rgba(240, 192, 196, 0.35) 0%, transparent 40rem),
-    radial-gradient(circle at 88% 18%, rgba(245, 219, 210, 0.45) 0%, transparent 42rem),
-    radial-gradient(circle at 50% 85%, rgba(239, 226, 218, 0.5) 0%, transparent 45rem),
-    linear-gradient(145deg, #faf0eb 0%, #f6ece7 45%, #f0e3db 100%);
+    radial-gradient(circle at 10% 12%, rgba(251, 232, 230, 0.6) 0%, transparent 42rem),
+    radial-gradient(circle at 88% 18%, rgba(247, 244, 239, 0.8) 0%, transparent 40rem),
+    radial-gradient(circle at 50% 80%, rgba(250, 247, 242, 0.9) 0%, transparent 48rem),
+    linear-gradient(150deg, #f7f4ef 0%, #faf7f2 50%, #f4eee7 100%);
   color: var(--espresso);
   min-height: 100vh;
   position: relative;
@@ -52,13 +54,13 @@ button {
 .timecapsule-shell::before {
   content: '';
   position: absolute;
-  top: 15rem;
-  right: -6rem;
-  width: 28rem;
-  height: 28rem;
+  top: 12rem;
+  right: -5rem;
+  width: 30rem;
+  height: 30rem;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(255, 240, 235, 0) 70%);
-  filter: blur(40px);
+  background: radial-gradient(circle, rgba(251, 232, 230, 0.45) 0%, rgba(247, 244, 239, 0) 70%);
+  filter: blur(45px);
   pointer-events: none;
   z-index: -1;
 }
@@ -66,42 +68,38 @@ button {
 .timecapsule-shell::after {
   content: '';
   position: absolute;
-  bottom: 8rem;
+  bottom: 6rem;
   left: -8rem;
   width: 32rem;
   height: 32rem;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(235, 195, 198, 0.28) 0%, rgba(245, 226, 218, 0) 70%);
+  background: radial-gradient(circle, rgba(242, 226, 224, 0.4) 0%, rgba(247, 244, 239, 0) 70%);
   filter: blur(50px);
   pointer-events: none;
   z-index: -1;
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Modern Floating Header
+   Top Navigation Bar (fixed, non-overlapping)
 ───────────────────────────────────────────────────────────── */
 .timecapsule-header {
   position: fixed;
-  top: 1.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(calc(100% - 2.5rem), 78rem);
-  background: rgba(255, 253, 249, 0.8) !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(255, 253, 249, 0.92) !important;
   backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(232, 213, 206, 0.7) !important;
-  border-radius: 9999px;
-  box-shadow:
-    0 10px 30px -5px rgba(61, 44, 41, 0.05),
-    0 20px 40px -15px rgba(61, 44, 41, 0.04);
+  border-bottom: 1px solid var(--rose-border) !important;
   z-index: 50;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.3s ease;
 }
 
 .timecapsule-logo {
-  background: linear-gradient(135deg, #e87a5d 0%, #ea907a 100%) !important;
+  background: linear-gradient(135deg, #e8a49c 0%, #efa8a0 100%) !important;
   color: #ffffff;
   box-shadow:
-    0 4px 14px rgba(232, 122, 93, 0.35),
+    0 4px 14px rgba(232, 164, 156, 0.35),
     inset 0 1px 1px rgba(255, 255, 255, 0.6);
   transition: transform 0.25s ease;
 }
@@ -111,24 +109,24 @@ button {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Premium Buttons & Pills
+   Premium Buttons & Pills (Soft Rose/Blush #E8A49C)
 ───────────────────────────────────────────────────────────── */
 .timecapsule-primary {
-  background: linear-gradient(135deg, #e87a5d 0%, #eb8a71 100%) !important;
+  background: linear-gradient(135deg, #e8a49c 0%, #f0aba3 100%) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow:
-    0 6px 20px rgba(232, 122, 93, 0.28),
+    0 6px 20px rgba(232, 164, 156, 0.3),
     inset 0 1px 1px rgba(255, 255, 255, 0.5);
   font-weight: 600;
-  border-radius: 9999px;
+  border-radius: 9999px !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .timecapsule-primary:hover {
-  background: linear-gradient(135deg, #df7053 0%, #e87a5d 100%) !important;
+  background: linear-gradient(135deg, #df958c 0%, #e8a49c 100%) !important;
   box-shadow:
-    0 8px 24px rgba(232, 122, 93, 0.38),
+    0 8px 24px rgba(232, 164, 156, 0.4),
     inset 0 1px 1px rgba(255, 255, 255, 0.6);
   transform: translateY(-1px) scale(1.01);
 }
@@ -138,26 +136,26 @@ button {
 }
 
 .timecapsule-secondary {
-  background: rgba(255, 253, 249, 0.85);
+  background: rgba(255, 253, 249, 0.88);
   border: 1px solid var(--rose-border);
   color: var(--espresso);
-  border-radius: 9999px;
+  border-radius: 9999px !important;
   transition: all 0.2s ease;
 }
 
 .timecapsule-secondary:hover {
   background: #ffffff;
-  border-color: #d8c2ba;
+  border-color: #dfcebf;
   box-shadow: 0 4px 12px rgba(61, 44, 41, 0.05);
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Bento Grid Layout
+   Bento Grid Layout (Rounded-3xl Structure)
 ───────────────────────────────────────────────────────────── */
 .bento-grid {
   display: grid;
   gap: 1.25rem;
-  grid-auto-rows: minmax(180px, auto);
+  grid-auto-rows: minmax(190px, auto);
   grid-template-columns: 1fr;
 }
 
@@ -175,22 +173,22 @@ button {
 
 .bento-card {
   position: relative;
-  border-radius: 1.5rem;
+  border-radius: 1.875rem !important; /* rounded-3xl */
   border: 1px solid var(--rose-border);
-  background: rgba(255, 253, 249, 0.82);
+  background: rgba(255, 253, 249, 0.88);
   backdrop-filter: blur(16px);
   box-shadow:
-    0 10px 25px -5px rgba(61, 44, 41, 0.04),
+    0 10px 25px -8px rgba(61, 44, 41, 0.04),
     0 20px 30px -15px rgba(61, 44, 41, 0.03);
   transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bento-card:hover {
   transform: translateY(-3px);
-  border-color: #dbc3bb;
+  border-color: #dfcebf;
   box-shadow:
-    0 16px 36px -8px rgba(61, 44, 41, 0.08),
-    0 24px 44px -16px rgba(61, 44, 41, 0.05);
+    0 16px 36px -8px rgba(61, 44, 41, 0.07),
+    0 24px 44px -16px rgba(61, 44, 41, 0.04);
 }
 
 @media (min-width: 1024px) {
@@ -207,29 +205,29 @@ button {
 
 /* Bento Stat Cards */
 .bento-stat {
-  background: linear-gradient(145deg, rgba(255, 253, 249, 0.95), rgba(253, 245, 240, 0.85)) !important;
-  border: 1px solid rgba(232, 213, 206, 0.65) !important;
+  background: linear-gradient(145deg, rgba(255, 253, 249, 0.95), rgba(251, 232, 230, 0.5)) !important;
+  border: 1px solid var(--rose-border) !important;
 }
 
 .bento-stat-highlight {
-  background: linear-gradient(140deg, #fdf4f0 0%, #fae8e1 100%) !important;
-  border: 1px solid rgba(232, 122, 93, 0.22) !important;
+  background: linear-gradient(140deg, #fffdf9 0%, #fbe8e6 100%) !important;
+  border: 1px solid rgba(232, 164, 156, 0.35) !important;
 }
 
 /* Bento Hero CTA */
 .bento-cta {
-  background: linear-gradient(135deg, #e87a5d 0%, #ea8a72 50%, #f0a390 100%) !important;
+  background: linear-gradient(135deg, #e8a49c 0%, #efa8a0 50%, #f5bdb6 100%) !important;
   color: #ffffff !important;
   border: none !important;
   box-shadow:
-    0 12px 32px rgba(232, 122, 93, 0.28),
-    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    0 12px 32px rgba(232, 164, 156, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.45);
 }
 
 .bento-cta:hover {
   box-shadow:
-    0 18px 40px rgba(232, 122, 93, 0.38),
-    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+    0 18px 40px rgba(232, 164, 156, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.55);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -239,14 +237,14 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 1.5rem;
+  border-radius: 1.875rem !important; /* rounded-3xl */
 }
 
 .capsule-card-media-wrapper {
   position: relative;
   overflow: hidden;
-  border-radius: 1.125rem;
-  background: linear-gradient(135deg, #f4dfdb 0%, #ece0db 100%);
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, #fbe8e6 0%, #f4eee7 100%);
 }
 
 .capsule-card-media-wrapper img {
@@ -261,14 +259,14 @@ button {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Status Badges & Pill Tags
+   Status Badges & Pill Tags (rounded-full)
 ───────────────────────────────────────────────────────────── */
 .timecapsule-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px !important;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -276,33 +274,34 @@ button {
 }
 
 .badge-locked {
-  background: rgba(255, 245, 242, 0.88);
-  border: 1px solid rgba(232, 122, 93, 0.28);
-  color: #ad5c48;
+  background: rgba(251, 232, 230, 0.9);
+  border: 1px solid rgba(232, 164, 156, 0.35);
+  color: #a85950;
 }
 
 .badge-ready {
-  background: rgba(240, 253, 244, 0.9);
-  border: 1px solid rgba(74, 222, 128, 0.3);
-  color: #1f7a37;
+  background: rgba(236, 253, 243, 0.92);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: #1b7337;
 }
 
 .badge-opened {
-  background: rgba(248, 247, 245, 0.9);
-  border: 1px solid rgba(160, 140, 135, 0.25);
+  background: rgba(250, 247, 242, 0.92);
+  border: 1px solid rgba(164, 145, 140, 0.25);
   color: #6d5b57;
 }
 
 .timecapsule-countdown {
-  background: rgba(250, 237, 232, 0.8);
-  border: 1px solid rgba(232, 213, 206, 0.7);
+  background: rgba(251, 232, 230, 0.75);
+  border: 1px solid var(--rose-border);
   color: #8c5346;
+  border-radius: 9999px !important;
   font-feature-settings: 'tnum';
   font-variant-numeric: tabular-nums;
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Typography & Accents
+   Typography & Accents (Playfair Display + Plus Jakarta Sans)
 ───────────────────────────────────────────────────────────── */
 .editorial-heading {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
@@ -315,7 +314,7 @@ button {
   font-family: 'Caveat', cursive;
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--coral-accent);
+  color: var(--rose-button);
 }
 
 .script-accent {
@@ -327,7 +326,7 @@ button {
   font-family: 'Caveat', cursive;
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--coral-accent);
+  color: var(--rose-button);
   transform: rotate(-6deg);
   display: inline-block;
 }
@@ -337,39 +336,43 @@ button {
 ───────────────────────────────────────────────────────────── */
 .memory-gallery-row {
   display: flex;
-  gap: 1rem;
+  gap: 0.875rem;
   overflow-x: auto;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
   scroll-behavior: smooth;
   scrollbar-width: thin;
-  scrollbar-color: rgba(232, 122, 93, 0.25) transparent;
+  scrollbar-color: rgba(232, 164, 156, 0.35) transparent;
 }
 
 .memory-gallery-row::-webkit-scrollbar {
-  height: 6px;
+  height: 4px;
+}
+
+.memory-gallery-row::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .memory-gallery-row::-webkit-scrollbar-thumb {
-  background: rgba(232, 122, 93, 0.25);
+  background: rgba(232, 164, 156, 0.4);
   border-radius: 9999px;
 }
 
 .memory-gallery-thumbnail {
   flex-shrink: 0;
-  width: 8rem;
-  height: 8rem;
+  width: 9rem;
+  height: 9rem;
   border-radius: 1.25rem;
   overflow: hidden;
-  border: 1px solid rgba(232, 213, 206, 0.65);
-  background: #fdf5f0;
+  border: 1px solid var(--rose-border);
+  background: #fdf6f2;
   position: relative;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
 }
 
 .memory-gallery-thumbnail:hover {
-  transform: scale(1.05) translateY(-2px);
-  border-color: var(--coral-accent);
-  box-shadow: 0 10px 24px -4px rgba(232, 122, 93, 0.22);
+  border-color: var(--rose-button);
+  box-shadow: 0 8px 20px -4px rgba(232, 164, 156, 0.3);
 }
 
 .memory-gallery-thumbnail img {
@@ -379,46 +382,49 @@ button {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Modals & Lightboxes
+   Modals & Lightboxes (rounded-3xl)
 ───────────────────────────────────────────────────────────── */
 .timecapsule-modal-backdrop {
-  background: rgba(61, 44, 41, 0.4);
+  background: rgba(61, 44, 41, 0.35);
   backdrop-filter: blur(14px);
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .timecapsule-modal {
-  background: rgba(255, 253, 249, 0.96) !important;
-  border: 1px solid rgba(232, 213, 206, 0.85);
+  background: rgba(255, 253, 249, 0.97) !important;
+  border: 1px solid var(--rose-border);
+  border-radius: 1.875rem !important; /* rounded-3xl */
   box-shadow:
-    0 25px 60px -15px rgba(61, 44, 41, 0.22),
+    0 25px 60px -15px rgba(61, 44, 41, 0.18),
     0 0 1px 1px rgba(255, 255, 255, 0.8) inset;
   backdrop-filter: blur(24px);
   animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .timecapsule-field {
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
   border: 1px solid var(--rose-border) !important;
   color: var(--espresso) !important;
+  border-radius: 1rem !important;
   transition: all 0.2s ease;
 }
 
 .timecapsule-field:focus {
   background: #ffffff !important;
-  border-color: var(--coral-accent) !important;
-  box-shadow: 0 0 0 3px rgba(232, 122, 93, 0.16) !important;
+  border-color: var(--rose-button) !important;
+  box-shadow: 0 0 0 3px rgba(232, 164, 156, 0.2) !important;
 }
 
 .timecapsule-dropzone {
-  background: rgba(250, 244, 240, 0.65) !important;
+  background: rgba(251, 232, 230, 0.4) !important;
   border: 1.5px dashed #dbc2ba !important;
+  border-radius: 1.25rem !important;
   transition: all 0.2s ease;
 }
 
 .timecapsule-dropzone:hover {
-  background: #fdf5f0 !important;
-  border-color: var(--coral-accent) !important;
+  background: rgba(251, 232, 230, 0.65) !important;
+  border-color: var(--rose-button) !important;
 }
 
 /* Animations */

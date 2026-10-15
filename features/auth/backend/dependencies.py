@@ -1,3 +1,4 @@
+import os
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -20,7 +21,7 @@ def get_auth_service(repo: UserRepository = Depends(get_user_repository)) -> Aut
 
 def get_current_user(token: str = Depends(oauth2_scheme), repo: UserRepository = Depends(get_user_repository)) -> UserResponse:
     if token == "dev-only-mock-token":
-        return UserResponse(id="dev-user", email="dev@example.test")
+        return UserResponse(id="dev-user", email="dev@example.com")
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -5,12 +5,13 @@ import {
   ArrowUpRight,
   Calendar,
   Clock,
-  Compass,
+  Edit3,
   Eye,
   FileImage,
   Lock,
   LogOut,
   Plus,
+  Quote,
   Sparkles,
   Trash2,
   Unlock,
@@ -23,11 +24,16 @@ import {
   useDeleteCapsuleMutation,
   useListCapsulesQuery,
 } from '../api/capsulesApi'
-import type { Capsule } from '../api/types'
+
+const getMediaUrl = (path?: string | null) => {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `http://localhost:8001/media/${path}`
+}
 
 const formatDate = (value: string) => {
   try {
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('uk-UA', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -37,7 +43,7 @@ const formatDate = (value: string) => {
   }
 }
 
-function LiveCountdown({ target }: { target: string }) {
+function LiveCountdownBadge({ target }: { target: string }) {
   const [now, setNow] = useState(Date.now())
   const remaining = Math.max(0, new Date(target).getTime() - now)
   const days = Math.floor(remaining / 86400000)
@@ -51,14 +57,21 @@ function LiveCountdown({ target }: { target: string }) {
   }, [])
 
   if (remaining <= 0) {
-    return <span className="text-emerald-600 font-semibold">Ready to unlock</span>
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+        <Unlock size={11} /> Готово до відкриття
+      </span>
+    )
   }
 
   return (
-    <span className="font-mono text-xs font-semibold tracking-tight">
-      {days > 0 && `${days}d `}
-      {String(hours).padStart(2, '0')}h {String(minutes).padStart(2, '0')}m {String(seconds).padStart(2, '0')}s
-    </span>
+    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-[#EADFD8] text-[#8c5346] shadow-xs">
+      <Clock size={11} className="text-[#e8a49c]" />
+      <span className="font-mono tracking-tight">
+        {days > 0 && `${days}д `}
+        {String(hours).padStart(2, '0')}г {String(minutes).padStart(2, '0')}хв {String(seconds).padStart(2, '0')}с
+      </span>
+    </div>
   )
 }
 
@@ -69,8 +82,9 @@ export function DashboardPage() {
   const [deleteCapsule] = useDeleteCapsuleMutation()
   const [createCapsule, { isLoading: isCreating }] = useCreateCapsuleMutation()
 
+  const [activeTab, setActiveTab] = useState<'all' | 'locked' | 'unlocked'>('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [lightbox, setLightbox] = useState<Capsule | null>(null)
+  const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; title: string; text?: string | null } | null>(null)
   const [title, setTitle] = useState('')
   const [target, setTarget] = useState('')
   const [text, setText] = useState('')
@@ -84,28 +98,61 @@ export function DashboardPage() {
     return { total, locked, ready, opened }
   }, [capsules])
 
+  const filteredCapsules = useMemo(() => {
+    if (activeTab === 'locked') return capsules.filter((c) => c.status === 'locked')
+    if (activeTab === 'unlocked') return capsules.filter((c) => c.status !== 'locked')
+    return capsules
+  }, [capsules, activeTab])
+
+  // Collect all photos from unlocked/ready capsules for the rich memory stream
+  const memoryPhotos = useMemo(() => {
+    const items: { url: string; title: string; capsuleId: string; text?: string | null }[] = []
+    capsules.forEach((c) => {
+      if (c.status !== 'locked' && c.media_files && c.media_files.length > 0) {
+        c.media_files.forEach((url) => {
+          items.push({
+            url,
+            title: c.title,
+            capsuleId: c.id,
+            text: c.text,
+          })
+        })
+      }
+    })
+    return items
+  }, [capsules])
+
   const submitCapsule = async (event: FormEvent) => {
     event.preventDefault()
     if (!title || !target) return
 
-    await createCapsule({
-      title,
-      target_datetime: new Date(target).toISOString(),
-      text,
-      notify_email: 'dev@example.test',
-      files: file ? [file] : [],
-    }).unwrap()
+    try {
+      await createCapsule({
+        title,
+        target_datetime: new Date(target).toISOString(),
+        text,
+        notify_email: 'dev@example.test',
+        files: file ? [file] : [],
+      }).unwrap()
 
-    setTitle('')
-    setTarget('')
-    setText('')
-    setFile(null)
-    setIsModalOpen(false)
+      setTitle('')
+      setTarget('')
+      setText('')
+      setFile(null)
+      setIsModalOpen(false)
+    } catch (err: any) {
+      console.error('Failed to create capsule', err)
+      alert(err?.data?.detail || 'Не вдалося створити капсулу. Перевірте, чи дата розблокування у майбутньому.')
+    }
   }
 
   const removeCapsule = async (id: string) => {
-    if (confirm('Are you sure you want to delete this time capsule? This action cannot be undone.')) {
-      await deleteCapsule(id)
+    if (confirm('Ви впевнені, що хочете видалити цю капсулу часу? Цю дію неможливо скасувати.')) {
+      try {
+        await deleteCapsule(id).unwrap()
+      } catch (err) {
+        console.error('Failed to delete capsule', err)
+      }
     }
   }
 
@@ -115,128 +162,170 @@ export function DashboardPage() {
   }
 
   return (
-    <main className="timecapsule-shell min-h-screen pb-24">
-      {/* ── Modern Floating Nav Header ── */}
+    <main className="timecapsule-shell min-h-screen pb-28">
+      {/* ── Top Navigation Bar (fixed 64px, full-width) ── */}
       <header className="timecapsule-header">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
-          <div className="flex items-center gap-3.5">
-            <div className="timecapsule-logo flex h-10 w-10 items-center justify-center rounded-2xl">
-              <Sparkles size={19} />
+        <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-5">
+          {/* Logo & Brand */}
+          <div className="flex items-center gap-3">
+            <div className="timecapsule-logo flex h-10 w-10 items-center justify-center rounded-full shadow-sm">
+              <Sparkles size={18} />
             </div>
             <div>
-              <p className="editorial-heading text-lg font-bold leading-tight tracking-tight">TimeCapsule</p>
-              <p className="text-[11px] font-medium text-[#7c6863]">Personal Memory Vault</p>
+              <p className="editorial-heading text-lg font-bold leading-none tracking-tight">TimeCapsule</p>
+              <p className="text-[11px] font-medium text-[#7e6a65] mt-0.5">Скарбниця спогадів</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Section Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 bg-[#FAF7F2] p-1 rounded-full border border-[#EADFD8]">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                activeTab === 'all'
+                  ? 'bg-white text-[#3d2c29] shadow-xs'
+                  : 'text-[#7e6a65] hover:text-[#3d2c29]'
+              }`}
+            >
+              Усі капсули ({stats.total})
+            </button>
+            <button
+              onClick={() => setActiveTab('locked')}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                activeTab === 'locked'
+                  ? 'bg-white text-[#3d2c29] shadow-xs'
+                  : 'text-[#7e6a65] hover:text-[#3d2c29]'
+              }`}
+            >
+              Запечатані ({stats.locked})
+            </button>
+            <button
+              onClick={() => setActiveTab('unlocked')}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                activeTab === 'unlocked'
+                  ? 'bg-white text-[#3d2c29] shadow-xs'
+                  : 'text-[#7e6a65] hover:text-[#3d2c29]'
+              }`}
+            >
+              Відкриті ({stats.ready + stats.opened})
+            </button>
+          </nav>
+
+          {/* Action Controls */}
+          <div className="flex items-center gap-2.5">
             {isDevAuthBypassEnabled && (
-              <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200/80">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#FBE8E6] text-[#8c5346] border border-[#EADFD8]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e8a49c] animate-pulse" />
                 Dev Mode
               </span>
             )}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="timecapsule-primary flex items-center gap-2 px-5 py-2.5 text-xs tracking-wide uppercase transition-all"
+              className="timecapsule-primary flex items-center gap-1.5 px-5 py-2.5 text-xs font-semibold tracking-wide shadow-sm"
             >
-              <Plus size={16} /> New Capsule
+              <Plus size={15} /> Нова капсула
             </button>
             <button
               onClick={handleLogout}
               title="Sign out"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-[#7c6863] hover:text-[#3d2c29] hover:bg-white/80 transition-all border border-transparent hover:border-[#e8d5ce]"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-[#7e6a65] hover:text-[#3d2c29] hover:bg-white transition-all border border-transparent hover:border-[#EADFD8]"
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* ── Hero & Intro Section ── */}
-      <section className="mx-auto max-w-7xl px-6 pt-32 pb-8">
-        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fdf4f0] border border-[#e8d5ce] text-[#e87a5d] text-xs font-bold mb-4">
-              <Compass size={13} />
-              <span>Private Vault & Timed Letters</span>
-            </div>
-            <h1 className="editorial-heading text-4xl sm:text-5xl lg:text-6xl leading-[1.08] text-[#3d2c29]">
-              Moments kept safe, <br />
-              <span className="italic font-normal text-[#e87a5d]">unlocked tomorrow.</span>
-            </h1>
-            <p className="mt-4 text-base text-[#7c6863] leading-relaxed max-w-xl">
-              Seal your memories, personal goals, and anniversary letters with encrypted time-locks.
-              Delivered straight to the future when the countdown reaches zero.
-            </p>
+      {/* ── Hero Section (full-bleed, sits directly below the 64px fixed header) ── */}
+      <section className="bg-gradient-to-br from-[#FAF7F2] via-[#FFFDF9] to-[#FBE8E6] pt-16 pb-14 relative overflow-hidden">
+        {/* Ambient blush orb */}
+        <div className="absolute top-0 right-0 w-[28rem] h-[28rem] bg-radial from-[#FBE8E6]/60 to-transparent pointer-events-none blur-3xl -mr-24 -mt-12" />
+        <div className="relative z-10 mx-auto max-w-7xl px-6 sm:px-8 py-10">
+          {/* Category Kicker */}
+          <div className="inline-flex items-center gap-2 text-[11px] font-mono font-semibold uppercase tracking-widest text-[#8c5346] mb-5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#e8a49c]" />
+            🌐 TimeCapsule · Скарбниця Спогадів · Digital Vault
           </div>
 
-          {/* Quick Action Pill */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Giant Playfair Display Headline */}
+          <h1 className="editorial-heading text-5xl sm:text-6xl lg:text-7xl text-[#3d2c29] leading-tight max-w-3xl">
+            Збережи момент<br />
+            <span className="italic font-normal text-[#8c5346]">до того, як він стане спогадом.</span>
+          </h1>
+
+          {/* Description */}
+          <p className="mt-5 max-w-2xl text-base text-[#7e6a65] leading-relaxed">
+            Кожна капсула — це діалог із майбутнім. Запечатай свої найщиріші почуття, університетські миті,
+            подорожі та філософію життя із точними криптографічними замками часу.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="timecapsule-primary flex items-center justify-center gap-2.5 px-6 py-3.5 text-sm font-semibold shadow-md"
+              className="timecapsule-primary flex items-center gap-2 px-7 py-3 text-sm font-bold tracking-wide shadow-sm"
             >
-              <Plus size={17} /> Create Time Capsule
+              <Plus size={16} /> Створити капсулу часу
+            </button>
+            <button
+              onClick={() => setActiveTab('unlocked')}
+              className="px-6 py-3 rounded-full text-sm font-semibold text-[#7e6a65] bg-white/80 hover:bg-white hover:text-[#3d2c29] border border-[#EADFD8] shadow-sm transition-all"
+            >
+              Переглянути відкриті ({stats.ready + stats.opened})
             </button>
           </div>
         </div>
+      </section>
 
-        {/* ── Memory Gallery (Horizontal Flow) ── */}
-        {capsules.some((c) => c.media_files.length > 0) && (
-          <div className="mb-12 rounded-3xl border border-[#e8d5ce] bg-white/70 backdrop-blur-md p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <FileImage size={18} className="text-[#e87a5d]" />
-                <h2 className="editorial-heading text-xl text-[#3d2c29]">Curated Memory Stream</h2>
+      {/* ── Main Content Container (gallery, bento grid, etc.) ── */}
+      <section className="mx-auto max-w-7xl px-5 sm:px-8 pt-10">
+
+        {/* ── Curated Memory Preview Row (Rich Horizontal Carousel with Unsplash Photos) ── */}
+        {memoryPhotos.length > 0 && (
+          <div className="mb-10 rounded-3xl border border-[#EADFD8] bg-[#FFFDF9]/90 backdrop-blur-md p-6 shadow-sm">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="editorial-heading text-2xl tracking-tight text-[#3d2c29] leading-tight">
+                  Галерея збережених миттєвостей
+                </h2>
+                <p className="mt-1 text-sm text-[#7e6a65]">
+                  Справжні кадри, подорожі та живі емоції з відкритих капсул
+                </p>
               </div>
-              <span className="text-xs font-semibold text-[#7c6863]">
-                {capsules.filter((c) => c.media_files.length > 0).length} attachments
+              <span className="shrink-0 ml-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[#8c5346] bg-[#FBE8E6] px-3.5 py-1.5 rounded-full border border-[#EADFD8]">
+                <FileImage size={12} />
+                {memoryPhotos.length} фото
               </span>
             </div>
 
             <div className="memory-gallery-row">
-              {capsules
-                .filter((c) => c.media_files.length > 0)
-                .map((capsule) => {
-                  const isLocked = capsule.status === 'locked'
-                  const mediaUrl = capsule.media_files[0]
-
-                  return (
-                    <button
-                      key={capsule.id}
-                      onClick={() => !isLocked && setLightbox(capsule)}
-                      disabled={isLocked}
-                      className="memory-gallery-thumbnail group relative"
-                    >
-                      {mediaUrl ? (
-                        <img
-                          src={mediaUrl}
-                          alt={capsule.title}
-                          className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-                            isLocked ? 'blur-md opacity-70' : ''
-                          }`}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-[#fdf5f0] text-[#c89da0]">
-                          <Sparkles size={24} />
-                        </div>
-                      )}
-
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
-                        <p className="text-[11px] font-semibold text-white truncate">{capsule.title}</p>
-                      </div>
-
-                      {isLocked && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
-                          <div className="h-7 w-7 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-[#8e5c5f]">
-                            <Lock size={13} />
-                          </div>
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
+              {memoryPhotos.map((photo, index) => (
+                <button
+                  key={`${photo.capsuleId}-${index}`}
+                  onClick={() => setSelectedPhoto(photo)}
+                  className="memory-gallery-thumbnail group relative rounded-2xl overflow-hidden border border-[#EADFD8] bg-[#FAF7F2] cursor-pointer"
+                  title={photo.title}
+                >
+                  {/* Photo with subtle zoom */}
+                  <img
+                    src={getMediaUrl(photo.url)}
+                    alt={photo.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  {/* Dark gradient: always dimly visible, brightens fully on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+                  {/* Text overlay — sits above the gradient */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="text-sm font-semibold text-white drop-shadow-sm truncate leading-snug">
+                      {photo.title}
+                    </p>
+                    <span className="text-xs text-stone-300 font-medium mt-0.5 block tracking-wide">
+                      Натисніть для перегляду
+                    </span>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -244,134 +333,186 @@ export function DashboardPage() {
         {/* ── Status Messages ── */}
         {isLoading && (
           <div className="py-24 text-center">
-            <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-[#e87a5d] border-t-transparent" />
-            <p className="text-sm font-medium text-[#7c6863]">Accessing your private archive...</p>
+            <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-[#e8a49c] border-t-transparent" />
+            <p className="text-sm font-medium text-[#7e6a65]">Відкриваємо вашу особисту скарбницю...</p>
           </div>
         )}
 
         {error && (
-          <div className="mb-10 rounded-2xl border border-red-200 bg-red-50/90 p-6 text-center text-red-700">
-            <p className="font-semibold">Unable to connect to the capsules service.</p>
-            <p className="text-xs mt-1 text-red-600">Ensure the backend is running at http://localhost:8001</p>
+          <div className="mb-10 rounded-3xl border border-rose-200 bg-rose-50/80 p-6 text-center text-rose-800 shadow-sm">
+            <p className="font-semibold text-sm">Не вдалося з'єднатися із сервером капсул.</p>
+            <p className="text-xs mt-1 text-rose-600">Переконайтеся, що backend працює за адресою http://localhost:8001</p>
           </div>
         )}
 
-        {/* Empty State */}
-        {!isLoading && !error && capsules.length === 0 && (
-          <div className="rounded-3xl border border-dashed border-[#e8d5ce] bg-white/60 p-16 text-center shadow-sm">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fdf4f0] text-[#e87a5d]">
+        {/* ── Empty State ── */}
+        {!isLoading && !error && filteredCapsules.length === 0 && (
+          <div className="rounded-3xl border border-dashed border-[#EADFD8] bg-[#FFFDF9] p-16 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FBE8E6] text-[#8c5346]">
               <Sparkles size={28} />
             </div>
-            <h2 className="editorial-heading text-2xl text-[#3d2c29]">Your vault is empty</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-[#7c6863] leading-relaxed">
-              Create your very first time capsule. Write a note to your future self, choose an unlock
-              date, and add your favorite photos.
+            <h2 className="editorial-heading text-2xl text-[#3d2c29]">У цій категорії поки порожньо</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-[#7e6a65] leading-relaxed">
+              Створіть нову капсулу часу: запишіть важливі думки, оберіть дату у майбутньому та додайте
+              улюблені атмосферні світлини.
             </p>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="timecapsule-primary mt-6 inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold"
+              className="timecapsule-primary mt-6 inline-flex items-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-wider shadow-sm"
             >
-              <Plus size={16} /> Create your first capsule
+              <Plus size={16} /> Створити капсулу
             </button>
           </div>
         )}
 
-        {/* ── Responsive Bento Grid ── */}
-        {!isLoading && capsules.length > 0 && (
+        {/* ── Responsive Bento Grid Layout with Capsules & Philosophical Quote Cards ── */}
+        {!isLoading && filteredCapsules.length > 0 && (
           <div className="bento-grid">
-            {/* Stat: Total Capsules */}
-            <div className="bento-card bento-stat p-6 flex flex-col justify-between">
+            {/* Stat Card 1: Total Vault */}
+            <div className="bento-card bento-stat p-6 flex flex-col justify-between rounded-3xl border border-[#EADFD8] bg-[#FFFDF9] shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#7c6863]">Total Vault</span>
-                <span className="bento-sticker text-xs">archive</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#7e6a65]">Загальний архів</span>
+                <span className="bento-sticker text-xs">спогади</span>
               </div>
-              <div className="my-auto py-2">
+              <div className="my-auto py-3">
                 <p className="text-5xl font-extrabold tracking-tight text-[#3d2c29]">{stats.total}</p>
-                <p className="text-xs text-[#7c6863] mt-1 font-medium">memories sealed in time</p>
+                <p className="text-xs text-[#7e6a65] mt-1 font-medium">капсул надійно збережено</p>
               </div>
-              <div className="h-1.5 w-full bg-[#e8d5ce]/60 rounded-full overflow-hidden">
-                <div className="h-full bg-[#e87a5d] rounded-full" style={{ width: '100%' }} />
+              <div className="h-1.5 w-full bg-[#EADFD8]/60 rounded-full overflow-hidden">
+                <div className="h-full bg-[#e8a49c] rounded-full" style={{ width: '100%' }} />
               </div>
             </div>
 
-            {/* Stat: Locked & Sealed */}
-            <div className="bento-card bento-stat-highlight p-6 flex flex-col justify-between">
+            {/* Stat Card 2: Time-Locked */}
+            <div className="bento-card bento-stat-highlight p-6 flex flex-col justify-between rounded-3xl border border-[#EADFD8] bg-gradient-to-br from-[#FFFDF9] to-[#FBE8E6] shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#ad5c48]">Time-Locked</span>
-                <div className="flex items-center gap-1 text-[11px] font-bold text-[#ad5c48] px-2 py-0.5 rounded-full bg-[#fbeee9]">
-                  <Lock size={11} /> Active
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#8c5346]">Запечатано в часі</span>
+                <div className="flex items-center gap-1 text-[11px] font-bold text-[#8c5346] px-2.5 py-0.5 rounded-full bg-white border border-[#EADFD8] shadow-2xs">
+                  <Lock size={10} /> Активні
                 </div>
               </div>
-              <div className="my-auto py-2">
-                <p className="text-5xl font-extrabold tracking-tight text-[#ad5c48]">{stats.locked}</p>
-                <p className="text-xs text-[#7c6863] mt-1 font-medium">waiting for their date</p>
+              <div className="my-auto py-3">
+                <p className="text-5xl font-extrabold tracking-tight text-[#8c5346]">{stats.locked}</p>
+                <p className="text-xs text-[#7e6a65] mt-1 font-medium">очікують призначеного дня</p>
               </div>
-              <div className="h-1.5 w-full bg-[#e8d5ce]/60 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-[#EADFD8]/60 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#ad5c48] rounded-full transition-all"
+                  className="h-full bg-[#8c5346] rounded-full transition-all"
                   style={{ width: `${stats.total > 0 ? (stats.locked / stats.total) * 100 : 0}%` }}
                 />
               </div>
             </div>
 
-            {/* Bento CTA: Create Memory */}
+            {/* Stat Card 3: Ready & Opened */}
+            <div className="bento-card p-6 flex flex-col justify-between rounded-3xl border border-[#EADFD8] bg-[#FFFDF9] shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#7e6a65]">Відкрито</span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <Unlock size={10} /> Доступні
+                </span>
+              </div>
+              <div className="my-auto py-3">
+                <p className="text-5xl font-extrabold tracking-tight text-[#3d2c29]">{stats.ready + stats.opened}</p>
+                <p className="text-xs text-[#7e6a65] mt-1 font-medium">готових до читання та перегляду</p>
+              </div>
+              <div className="h-1.5 w-full bg-[#EADFD8]/60 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full"
+                  style={{ width: `${stats.total > 0 ? ((stats.ready + stats.opened) / stats.total) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Bento Quick Action: Create New Memory */}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bento-card bento-cta p-6 flex flex-col justify-between text-left group cursor-pointer"
+              className="bento-card bento-cta p-6 flex flex-col justify-between text-left group cursor-pointer rounded-3xl"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold tracking-wider uppercase opacity-90">Instant Action</span>
-                <div className="h-8 w-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-transform group-hover:rotate-45">
+                <span className="text-[11px] font-bold tracking-wider uppercase opacity-95">Швидка дія</span>
+                <div className="h-8 w-8 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center text-white transition-transform group-hover:rotate-45">
                   <ArrowUpRight size={17} />
                 </div>
               </div>
-              <div className="my-auto">
-                <h3 className="editorial-heading text-2xl font-bold leading-tight">Seal a New Memory</h3>
-                <p className="text-xs opacity-90 mt-1 font-medium">Attach photos, notes & future date</p>
+              <div className="my-auto py-2">
+                <h3 className="editorial-heading text-2xl font-bold leading-tight text-white">Запечатати новий спогад</h3>
+                <p className="text-xs opacity-90 mt-1 font-medium text-white/90">Лист, світлини та майбутня дата</p>
               </div>
-              <span className="text-xs font-semibold underline underline-offset-4 opacity-95">Open creator →</span>
+              <span className="text-xs font-semibold underline underline-offset-4 text-white">Відкрити форму →</span>
             </button>
 
-            {/* Quote Card */}
-            <div className="bento-card p-6 flex flex-col justify-between bg-gradient-to-br from-[#fdf5f0] to-[#f9eae4]">
-              <Sparkles size={20} className="text-[#e87a5d]" />
-              <p className="script-accent text-2xl text-[#3d2c29] leading-snug my-auto">
-                &ldquo;Yesterday is a memory, tomorrow is a secret.&rdquo;
-              </p>
-              <span className="text-[11px] font-semibold tracking-wider uppercase text-[#7c6863]">TimeCapsule Vault</span>
+            {/* ── Philosophical Quote Card 1 (Caveat Script & Playfair Display) ── */}
+            <div className="bento-card p-6 flex flex-col justify-between rounded-3xl border border-[#EADFD8] bg-gradient-to-br from-[#FFFDF9] via-[#FAF7F2] to-[#FBE8E6] shadow-sm relative overflow-hidden bento-span-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="editorial-kicker text-sm">Філософія пам'яті</span>
+                <Quote size={20} className="text-[#e8a49c] opacity-60" />
+              </div>
+              <blockquote className="my-auto py-2">
+                <p className="editorial-heading text-xl sm:text-2xl text-[#3d2c29] italic leading-relaxed">
+                  «Пам'ять — це єдиний рай, з якого нас неможливо вигнати. Кожен запечатаний рядок оживе знову.»
+                </p>
+              </blockquote>
+              <div className="pt-3 border-t border-[#EADFD8]/60 flex items-center justify-between text-xs text-[#7e6a65]">
+                <span className="script-accent text-base text-[#8c5346]">TimeCapsule • Діалог із майбутнім</span>
+                <span className="font-medium">— Жан Поль</span>
+              </div>
             </div>
 
-            {/* ── Capsule Grid Cards ── */}
-            {capsules.map((capsule, index) => {
+            {/* ── Dynamic Capsule Bento Cards ── */}
+            {filteredCapsules.map((capsule, index) => {
               const isLocked = capsule.status === 'locked'
               const isReady = capsule.status === 'ready'
+              const isOpened = capsule.status === 'opened'
+              const isSpan2 = (index + 1) % 4 === 0
 
               return (
                 <article
                   key={capsule.id}
-                  className={`bento-card timecapsule-card p-5 flex flex-col justify-between ${
-                    index % 6 === 0 ? 'bento-span-2' : ''
+                  className={`bento-card timecapsule-card rounded-3xl border border-[#EADFD8] bg-[#FFFDF9] p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-md ${
+                    isSpan2 ? 'bento-span-2' : ''
                   }`}
                 >
                   <div>
-                    {/* Media Thumbnail / Frame */}
-                    <div className="capsule-card-media-wrapper aspect-[16/9] w-full mb-4">
-                      {capsule.media_files[0] ? (
-                        <img
-                          src={capsule.media_files[0]}
-                          alt={capsule.title}
-                          className={isLocked ? 'blur-md' : ''}
-                        />
+                    {/* Visual Media Header: Multi-photo preview or main image frame */}
+                    <div className="capsule-card-media-wrapper aspect-[16/9] w-full rounded-2xl overflow-hidden mb-4 relative bg-[#FAF7F2] border border-[#EADFD8]/60">
+                      {capsule.media_files.length > 0 ? (
+                        <div className="relative w-full h-full">
+                          <img
+                            src={getMediaUrl(capsule.media_files[0])}
+                            alt={capsule.title}
+                            className={`w-full h-full object-cover transition-transform duration-500 hover:scale-[1.04] ${
+                              isLocked ? 'blur-md opacity-80' : ''
+                            }`}
+                          />
+                          {/* Multi-photo mini gallery inset for opened capsules */}
+                          {!isLocked && capsule.media_files.length > 1 && (
+                            <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 p-1 bg-black/40 backdrop-blur-md rounded-xl">
+                              {capsule.media_files.slice(0, 3).map((img, idx) => (
+                                <img
+                                  key={idx}
+                                  src={getMediaUrl(img)}
+                                  alt={`Thumb ${idx + 1}`}
+                                  className="h-7 w-7 rounded-lg object-cover border border-white/60 shadow-xs"
+                                />
+                              ))}
+                              {capsule.media_files.length > 3 && (
+                                <span className="text-[10px] font-bold text-white px-1.5">
+                                  +{capsule.media_files.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[#c89da0]">
-                          <Sparkles size={30} />
+                        <div className="flex h-full w-full items-center justify-center text-[#a4918c] bg-gradient-to-br from-[#FAF7F2] to-[#FBE8E6]">
+                          <Sparkles size={28} />
                         </div>
                       )}
 
                       {/* Status Tag on Media */}
                       <div className="absolute top-3 left-3">
                         <span
-                          className={`timecapsule-badge ${
+                          className={`timecapsule-badge rounded-full px-3 py-1 text-xs font-semibold ${
                             isLocked
                               ? 'badge-locked'
                               : isReady
@@ -380,58 +521,65 @@ export function DashboardPage() {
                           }`}
                         >
                           {isLocked ? <Lock size={11} /> : isReady ? <Unlock size={11} /> : <Eye size={11} />}
-                          <span className="capitalize">{capsule.status}</span>
+                          <span className="capitalize">
+                            {isLocked ? 'Запечатано' : isReady ? 'Готово' : 'Відкрито'}
+                          </span>
                         </span>
                       </div>
 
-                      {/* Photos Count Tag */}
+                      {/* Total Photos Badge */}
                       {capsule.media_files.length > 0 && (
-                        <div className="absolute bottom-3 right-3 rounded-lg bg-black/60 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm flex items-center gap-1">
+                        <div className="absolute top-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur-sm flex items-center gap-1">
                           <FileImage size={11} />
                           <span>{capsule.media_files.length}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Capsule Header Info */}
+                    {/* Capsule Meta */}
                     <h3 className="editorial-heading text-xl text-[#3d2c29] font-bold line-clamp-1">
                       {capsule.title}
                     </h3>
-                    <p className="mt-1 flex items-center gap-1.5 text-xs text-[#7c6863]">
-                      <Calendar size={13} />
-                      <span>Unlock: {formatDate(capsule.target_datetime)}</span>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-[#7e6a65]">
+                      <Calendar size={13} className="text-[#e8a49c]" />
+                      <span>{isLocked ? 'Розблокування:' : 'Дата:'} {formatDate(capsule.target_datetime)}</span>
                     </p>
+
+                    {/* Letter Preview for Unlocked Capsules */}
+                    {!isLocked && capsule.text && (
+                      <p className="mt-2 text-xs text-[#7e6a65] line-clamp-2 italic leading-relaxed">
+                        &ldquo;{capsule.text}&rdquo;
+                      </p>
+                    )}
                   </div>
 
-                  {/* Footer & Actions */}
-                  <div className="mt-5 pt-3 border-t border-[#e8d5ce]/60 flex items-center justify-between gap-3">
+                  {/* Actions & Live Countdown */}
+                  <div className="mt-5 pt-3.5 border-t border-[#EADFD8]/60 flex items-center justify-between gap-2">
                     {isLocked ? (
-                      <div className="timecapsule-countdown flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
-                        <Clock size={13} />
-                        <LiveCountdown target={capsule.target_datetime} />
-                      </div>
+                      <LiveCountdownBadge target={capsule.target_datetime} />
                     ) : (
                       <button
                         onClick={() => navigate(`/capsule/${capsule.id}`)}
-                        className="timecapsule-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold"
+                        className="timecapsule-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold shadow-xs"
                       >
-                        <Unlock size={13} /> Open Capsule
+                        <Unlock size={13} /> {isOpened ? 'Читати спогад' : 'Відкрити'}
                       </button>
                     )}
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {isLocked && (
                         <button
                           onClick={() => navigate(`/edit/${capsule.id}`)}
-                          className="px-2.5 py-1 text-xs font-semibold text-[#7c6863] hover:text-[#3d2c29] hover:bg-[#f5ebe6] rounded-lg transition-colors"
+                          title="Редагувати капсулу"
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#7e6a65] hover:text-[#3d2c29] hover:bg-[#FAF7F2] rounded-full border border-transparent hover:border-[#EADFD8] transition-all"
                         >
-                          Edit
+                          <Edit3 size={12} /> Редагувати
                         </button>
                       )}
                       <button
                         onClick={() => removeCapsule(capsule.id)}
-                        title="Delete capsule"
-                        className="p-1.5 text-[#9e8983] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Видалити капсулу"
+                        className="p-1.5 text-[#a4918c] hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -440,6 +588,22 @@ export function DashboardPage() {
                 </article>
               )
             })}
+
+            {/* ── Philosophical Quote Card 2 (Inspirational Reflection) ── */}
+            <div className="bento-card p-6 flex flex-col justify-between rounded-3xl border border-[#EADFD8] bg-[#FFFDF9] shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#7e6a65]">Роздуми</span>
+                <span className="bento-sticker text-xs">цінність</span>
+              </div>
+              <blockquote className="my-auto py-2">
+                <p className="script-accent text-2xl text-[#8c5346] leading-snug">
+                  «Майбутнє належить тим, хто пам'ятає красу минулого і сміливо дивиться вперед.»
+                </p>
+              </blockquote>
+              <p className="text-[11px] text-[#a4918c] font-medium pt-2 border-t border-[#EADFD8]/50">
+                Запечатано з любов'ю у TimeCapsule
+              </p>
+            </div>
           </div>
         )}
       </section>
@@ -449,20 +613,20 @@ export function DashboardPage() {
         <div className="timecapsule-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
           <form
             onSubmit={submitCapsule}
-            className="timecapsule-modal w-full max-w-lg rounded-3xl p-8 relative overflow-hidden"
+            className="timecapsule-modal w-full max-w-lg rounded-3xl p-8 relative overflow-hidden bg-[#FFFDF9] border border-[#EADFD8] shadow-xl"
           >
             {/* Modal Header */}
             <div className="mb-6 flex items-start justify-between">
               <div>
-                <p className="editorial-kicker text-sm">New Time-Lock</p>
+                <span className="editorial-kicker text-sm">Нова капсула часу</span>
                 <h2 className="editorial-heading text-2xl font-bold text-[#3d2c29] mt-0.5">
-                  Create a Time Capsule
+                  Створити капсулу
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="rounded-full p-2 text-[#7c6863] hover:bg-[#f5ebe6] transition-colors"
+                className="rounded-full p-2 text-[#7e6a65] hover:bg-[#FAF7F2] transition-colors"
               >
                 <X size={18} />
               </button>
@@ -471,21 +635,21 @@ export function DashboardPage() {
             {/* Form Fields */}
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#7c6863] mb-1.5">
-                  Capsule Title *
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#7e6a65] mb-1.5">
+                  Назва капсули *
                 </label>
                 <input
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Letter to myself on graduation"
-                  className="timecapsule-field w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                  placeholder="напр., Подорож до Карпат або Лист собі"
+                  className="timecapsule-field w-full rounded-2xl px-4 py-2.5 text-sm outline-none border border-[#EADFD8] bg-white font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#7c6863] mb-1.5">
-                  Unlock Date and Time *
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#7e6a65] mb-1.5">
+                  Дата та час розблокування *
                 </label>
                 <input
                   required
@@ -493,30 +657,30 @@ export function DashboardPage() {
                   value={target}
                   onChange={(e) => setTarget(e.target.value)}
                   min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-                  className="timecapsule-field w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                  className="timecapsule-field w-full rounded-2xl px-4 py-2.5 text-sm outline-none border border-[#EADFD8] bg-white font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#7c6863] mb-1.5">
-                  Letter / Memory Note
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#7e6a65] mb-1.5">
+                  Лист / Текст спогаду
                 </label>
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="Write whatever you want to remember..."
+                  placeholder="Напишіть усе, що хочете передати собі у майбутнє..."
                   rows={4}
-                  className="timecapsule-field w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  className="timecapsule-field w-full resize-none rounded-2xl px-4 py-2.5 text-sm outline-none border border-[#EADFD8] bg-white font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#7c6863] mb-1.5">
-                  Attach Media <span className="text-[#9e8983] font-normal">(up to 15 MB)</span>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#7e6a65] mb-1.5">
+                  Додати медіа <span className="text-[#a4918c] font-normal lowercase">(до 15 МБ)</span>
                 </label>
-                <label className="timecapsule-dropzone flex cursor-pointer items-center gap-3 rounded-xl p-4 text-sm text-[#7c6863]">
-                  <FileImage size={20} className="text-[#e87a5d]" />
-                  <span className="truncate">{file ? file.name : 'Select photo, video, or PDF attachment'}</span>
+                <label className="timecapsule-dropzone flex cursor-pointer items-center gap-3 rounded-2xl p-4 text-sm text-[#7e6a65] bg-[#FBE8E6]/40 border border-dashed border-[#EADFD8]">
+                  <FileImage size={20} className="text-[#e8a49c]" />
+                  <span className="truncate">{file ? file.name : 'Обрати фотографії чи документи'}</span>
                   <input
                     type="file"
                     accept="image/*,video/*,.pdf"
@@ -532,55 +696,55 @@ export function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 text-sm font-semibold text-[#7c6863] hover:text-[#3d2c29]"
+                className="px-5 py-2.5 text-xs font-semibold text-[#7e6a65] hover:text-[#3d2c29] rounded-full"
               >
-                Cancel
+                Скасувати
               </button>
               <button
                 disabled={isCreating}
                 type="submit"
-                className="timecapsule-primary px-6 py-2.5 text-sm font-semibold disabled:opacity-50"
+                className="timecapsule-primary px-6 py-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50 shadow-sm"
               >
-                {isCreating ? 'Sealing Capsule...' : 'Seal Capsule 🔒'}
+                {isCreating ? 'Запечатування...' : 'Запечатати 🔒'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* ── Modern Lightbox Modal ── */}
-      {lightbox && (
+      {/* ── Modern Photo Lightbox Modal ── */}
+      {selectedPhoto && (
         <div
           className="timecapsule-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}
+          onClick={() => setSelectedPhoto(null)}
         >
           <div
-            className="timecapsule-modal relative max-h-[90vh] max-w-2xl w-full overflow-hidden rounded-3xl"
+            className="timecapsule-modal relative max-h-[90vh] max-w-2xl w-full overflow-hidden rounded-3xl bg-[#FFFDF9] border border-[#EADFD8] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setLightbox(null)}
-              className="absolute right-4 top-4 z-10 rounded-full bg-white/80 backdrop-blur-sm p-2 text-[#3d2c29] hover:bg-white shadow-sm"
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute right-4 top-4 z-10 rounded-full bg-white/90 backdrop-blur-sm p-2 text-[#3d2c29] hover:bg-white shadow-sm border border-[#EADFD8]"
             >
               <X size={18} />
             </button>
 
-            {lightbox.media_files[0] && (
-              <div className="max-h-[55vh] overflow-hidden bg-black/5 flex items-center justify-center">
-                <img
-                  src={lightbox.media_files[0]}
-                  alt={lightbox.title}
-                  className="max-h-[55vh] w-auto object-contain"
-                />
-              </div>
-            )}
+            <div className="max-h-[55vh] overflow-hidden bg-[#FAF7F2] flex items-center justify-center">
+              <img
+                src={getMediaUrl(selectedPhoto.url)}
+                alt={selectedPhoto.title}
+                className="max-h-[55vh] w-auto object-contain rounded-t-2xl"
+              />
+            </div>
 
             <div className="p-7">
-              <span className="editorial-kicker text-sm">Unlocked Memory</span>
-              <h2 className="editorial-heading text-2xl font-bold text-[#3d2c29] mt-1">{lightbox.title}</h2>
-              <p className="mt-3 text-sm text-[#7c6863] leading-relaxed whitespace-pre-wrap">
-                {lightbox.text || 'No letter was attached to this capsule.'}
-              </p>
+              <span className="editorial-kicker text-sm">Збережений момент</span>
+              <h2 className="editorial-heading text-2xl font-bold text-[#3d2c29] mt-1">{selectedPhoto.title}</h2>
+              {selectedPhoto.text && (
+                <p className="mt-3 text-sm text-[#7e6a65] leading-relaxed whitespace-pre-wrap italic">
+                  &ldquo;{selectedPhoto.text}&rdquo;
+                </p>
+              )}
             </div>
           </div>
         </div>

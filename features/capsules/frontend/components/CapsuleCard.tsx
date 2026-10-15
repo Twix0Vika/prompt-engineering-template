@@ -11,14 +11,20 @@ interface Props {
 
 function CountdownBadge({ target }: { target: string }) {
   const r = useCountdown(target)
-  if (!r) return <span className="text-emerald-700 text-xs font-semibold">Ready to unlock</span>
+  if (!r) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+        <Unlock size={11} /> Готово до відкриття
+      </span>
+    )
+  }
 
   return (
-    <div className="timecapsule-countdown inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold">
-      <Clock size={12} />
+    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-[#EADFD8] text-[#8c5346] shadow-sm">
+      <Clock size={11} className="text-[#e8a49c]" />
       <span className="font-mono">
-        {r.days > 0 && `${r.days}d `}
-        {String(r.hours).padStart(2, '0')}h {String(r.minutes).padStart(2, '0')}m {String(r.seconds).padStart(2, '0')}s
+        {r.days > 0 && `${r.days}д `}
+        {String(r.hours).padStart(2, '0')}г {String(r.minutes).padStart(2, '0')}хв {String(r.seconds).padStart(2, '0')}с
       </span>
     </div>
   )
@@ -27,14 +33,15 @@ function CountdownBadge({ target }: { target: string }) {
 export function CapsuleCard({ capsule, onDelete, onEdit, onView }: Props) {
   const isLocked = capsule.status === 'locked'
   const isReady = capsule.status === 'ready'
+  const isOpened = capsule.status === 'opened'
 
   return (
-    <div className="timecapsule-card rounded-2xl border border-[#e8d5ce] bg-white/85 backdrop-blur-md p-5 flex flex-col justify-between hover:shadow-md transition-all">
+    <div className="timecapsule-card rounded-3xl border border-[#EADFD8] bg-[#FFFDF9] p-6 flex flex-col justify-between shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md">
       <div>
-        {/* Status badge */}
-        <div className="flex items-center justify-between mb-3">
+        {/* Status & Date */}
+        <div className="flex items-center justify-between mb-3.5">
           <span
-            className={`timecapsule-badge ${
+            className={`timecapsule-badge rounded-full px-3 py-1 text-xs font-semibold ${
               isLocked
                 ? 'badge-locked'
                 : isReady
@@ -43,53 +50,61 @@ export function CapsuleCard({ capsule, onDelete, onEdit, onView }: Props) {
             }`}
           >
             {isLocked ? <Lock size={11} /> : isReady ? <Unlock size={11} /> : <Eye size={11} />}
-            <span className="capitalize">{capsule.status}</span>
+            <span>
+              {isLocked ? 'Запечатано' : isReady ? 'Готово' : 'Відкрито'}
+            </span>
           </span>
 
-          <span className="text-xs text-[#7c6863] flex items-center gap-1 font-medium">
-            <Calendar size={12} />
-            {new Date(capsule.target_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          <span className="text-xs text-[#7e6a65] flex items-center gap-1.5 font-medium">
+            <Calendar size={12} className="text-[#e8a49c]" />
+            {new Date(capsule.target_datetime).toLocaleDateString('uk-UA', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
           </span>
         </div>
 
-        {/* Title */}
+        {/* Title in Playfair Display */}
         <h3 className="editorial-heading text-xl text-[#3d2c29] font-bold line-clamp-1">{capsule.title}</h3>
 
-        {/* Countdown */}
+        {/* Live Countdown Badge */}
         {isLocked && (
-          <div className="mt-3">
+          <div className="mt-3.5">
             <CountdownBadge target={capsule.target_datetime} />
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between gap-2 mt-5 pt-3 border-t border-[#e8d5ce]/60">
+      <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-[#EADFD8]/60">
         {!isLocked ? (
           <button
             onClick={onView}
-            className="timecapsule-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold"
+            className="timecapsule-primary inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-full shadow-xs"
           >
-            <Unlock size={13} /> View Memory
+            <Unlock size={13} /> {isOpened ? 'Читати спогад' : 'Відкрити'}
           </button>
         ) : (
-          <div className="text-xs text-[#9e8983] font-medium italic">Sealed until date</div>
+          <div className="text-xs text-[#a4918c] font-medium italic flex items-center gap-1">
+            <Lock size={11} /> Запечатано до призначеного дня
+          </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {isLocked && (
             <button
               onClick={onEdit}
-              title="Edit capsule"
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#7c6863] hover:text-[#3d2c29] hover:bg-[#f5ebe6] rounded-lg transition-colors"
+              title="Редагувати капсулу"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#7e6a65] hover:text-[#3d2c29] hover:bg-[#FAF7F2] rounded-full border border-transparent hover:border-[#EADFD8] transition-all"
             >
-              <Edit3 size={13} /> Edit
+              <Edit3 size={12} /> Редагувати
             </button>
           )}
           <button
             onClick={onDelete}
-            title="Delete capsule"
-            className="p-1.5 text-[#9e8983] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Видалити капсулу"
+            className="p-1.5 text-[#a4918c] hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors"
           >
             <Trash2 size={14} />
           </button>

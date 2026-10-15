@@ -15,7 +15,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5174,
+    port: 5175,
   },
   optimizeDeps: {
     // Pre-bundle these so Vite doesn't lose them when traversing

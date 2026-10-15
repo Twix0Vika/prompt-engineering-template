@@ -14,7 +14,7 @@ export interface CreateCapsulePayload {
   title: string
   target_datetime: string
   text?: string
-  notify_email: string
+  notify_email?: string
   files?: File[]
 }
 

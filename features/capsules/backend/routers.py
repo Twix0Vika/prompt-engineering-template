@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.staticfiles import StaticFiles
 
 from app.utils.paths import get_data_dir
@@ -50,6 +50,50 @@ def _save_uploads(files: List[UploadFile]) -> list[str]:
     return saved
 
 
+async def _extract_capsule_payload(request: Request, default_email: str):
+    content_type = request.headers.get("content-type", "")
+    title = None
+    target_datetime_str = None
+    text = None
+    notify_email = None
+    raw_files: list[UploadFile] = []
+
+    if "multipart/form-data" in content_type or "application/x-www-form-urlencoded" in content_type:
+        form = await request.form()
+        title = form.get("title")
+        target_datetime_str = form.get("target_datetime")
+        text = form.get("text")
+        notify_email = form.get("notify_email")
+        for f in form.getlist("files"):
+            if isinstance(f, UploadFile) and f.filename:
+                raw_files.append(f)
+    else:
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                title = body.get("title")
+                target_datetime_str = body.get("target_datetime")
+                text = body.get("text")
+                notify_email = body.get("notify_email")
+        except Exception:
+            pass
+
+    if not title or not str(title).strip():
+        raise HTTPException(status_code=422, detail="Title is required")
+    if not target_datetime_str:
+        raise HTTPException(status_code=422, detail="Target unlock date is required")
+
+    from datetime import datetime
+    try:
+        clean_str = str(target_datetime_str).strip().replace("Z", "+00:00")
+        dt = datetime.fromisoformat(clean_str)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid datetime format")
+
+    final_email = str(notify_email or default_email or "dev@example.test").strip()
+    return str(title).strip(), dt, (str(text) if text else None), final_email, raw_files
+
+
 # ------------------------------------------------------------------ #
 # List                                                                #
 # ------------------------------------------------------------------ #
@@ -65,22 +109,13 @@ def list_capsules(
 # Create                                                              #
 # ------------------------------------------------------------------ #
 @router.post("/", response_model=CapsuleResponse, status_code=status.HTTP_201_CREATED)
-def create_capsule(
-    title: str = Form(...),
-    target_datetime: str = Form(...),
-    text: Optional[str] = Form(None),
-    notify_email: str = Form(...),
-    files: List[UploadFile] = File(default=[]),
+async def create_capsule(
+    request: Request,
     current_user: UserResponse = Depends(get_current_user),
     service: CapsuleService = Depends(get_capsule_service),
 ):
-    from datetime import datetime
-    try:
-        dt = datetime.fromisoformat(target_datetime)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid datetime format")
-
-    saved_media = _save_uploads([f for f in files if f.filename])
+    title, dt, text, notify_email, raw_files = await _extract_capsule_payload(request, current_user.email)
+    saved_media = _save_uploads(raw_files)
     data = CapsuleCreate(
         title=title,
         target_datetime=dt,
@@ -107,23 +142,14 @@ def get_capsule(
 # Update                                                              #
 # ------------------------------------------------------------------ #
 @router.put("/{capsule_id}", response_model=CapsuleResponse)
-def update_capsule(
+async def update_capsule(
     capsule_id: str,
-    title: str = Form(...),
-    target_datetime: str = Form(...),
-    text: Optional[str] = Form(None),
-    notify_email: str = Form(...),
-    files: List[UploadFile] = File(default=[]),
+    request: Request,
     current_user: UserResponse = Depends(get_current_user),
     service: CapsuleService = Depends(get_capsule_service),
 ):
-    from datetime import datetime
-    try:
-        dt = datetime.fromisoformat(target_datetime)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid datetime format")
-
-    saved_media = _save_uploads([f for f in files if f.filename])
+    title, dt, text, notify_email, raw_files = await _extract_capsule_payload(request, current_user.email)
+    saved_media = _save_uploads(raw_files)
     data = CapsuleUpdate(
         title=title,
         target_datetime=dt,
